@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Streamgraph</title>
+<style>
+
+button {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+
+</style>
+<button onclick="transition()">Update</button>
+<p>
+<svg width="960" height="500"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+<script>
+
+var n = 4, // number of layers
+    m = 1156; // number of samples per layer
+
+	
+var occupBoyd = [];
+var occupDuck = [];
+var occupJenkins = [];
+var occupMonett = [];
+
+d3.csv("/Streamgraph/parkingDataOld.csv", function(data) {
+	data.forEach(function(d) {
+		//console.log(d.Occupancy)
+	    d.Occupancy = +d.Occupancy;
+	    if(d.Facility == "Boyd House"){
+	    	occupBoyd.push(d.Occupancy);
+	    }else if(d.Facility == "Duck Pond"){
+	    	occupDuck.push(d.Occupancy);
+	    }else if(d.Facility == "Jenkins"){
+	    	occupJenkins.push(d.Occupancy);
+	    }else if(d.Facility == "Monett Lot - North"){
+	    	occupMonett.push(d.Occupancy);
+	    }
+	  });
+	
+	
+});
+    
+setTimeout(function(){
+
+	var data = [];
+	data.push(occupBoyd);
+	data.push(occupDuck);
+	data.push(occupJenkins);
+	data.push(occupMonett)
+	
+	
+	var stack = d3.stack().keys(d3.range(n)).offset(d3.stackOffsetSilhouette),
+    layers = stack(d3.transpose(d3.range(n).map(function(n) { return data[n] })));
+	console.log(d3.transpose(d3.range(n).map(function(n) { return data[n] })));
+
+	stack.value(function(d, key) { return d[key]; });
+	
+	var svg = d3.select("svg"),
+	    width = +svg.attr("width"),
+	    height = +svg.attr("height");
+	
+	var x = d3.scaleLinear()
+	    .domain([0, m - 1])
+	    .range([0, width]);
+	
+	var y = d3.scaleLinear()
+	    .domain([d3.min(layers, stackMin), d3.max(layers, stackMax)])
+	    .range([height, 0]);
+	
+	var z = d3.interpolateCool;
+	
+	var area = d3.area()
+	    .x(function(d, i) { return x(i); })
+	    .y0(function(d) { return y(d[0]); })
+	    .y1(function(d) { return y(d[1]); });
+	
+	var colorrange = ['#66c2a5','#fc8d62','#8da0cb','#e78ac3'];
+	var names = ["Boyd House", "Duck Pound", "Jenkins", "Monett Lot - North"];
+	
+	svg.selectAll("path")
+	  .data(layers)
+	  .enter().append("path")
+	    .attr("d", area)
+	    .attr("fill", function(d,i) { return colorrange[i]; }) // color
+        .append("title")
+        .text(function(d,i) { return names[i]; });
+	
+		    
+},5000);
+
+
+
+
+
+
+function stackMax(layer) {
+  return d3.max(layer, function(d) {return d[1]; });
+}
+
+function stackMin(layer) {
+  return d3.min(layer, function(d) { return d[0]; });
+}
+
+function transition() {
+  var t;
+  d3.selectAll("path")
+    .data((t = layers1, layers1 = layers0, layers0 = t))
+    .transition()
+      .duration(2500)
+      .attr("d", area);
+}
+
+// Inspired by Lee Byron�s test data generator.
+//  n : number of samples 
+//  m : number of bumps
+function bumps(n, m) {
+  var a = [], i;
+  for (i = 0; i < n; ++i) a[i] = 0;
+  for (i = 0; i < m; ++i) bump(a, n);
+  return a;
+}
+
+function bump(a, n) {
+  var x = 1 / (0.1 + Math.random()),
+      y = 2 * Math.random() - 0.5,
+      z = 10 / (0.1 + Math.random());
+  for (var i = 0; i < n; i++) {
+    var w = (i / n - y) * z;
+    a[i] += x * Math.exp(-w * w);
+  }
+}
+
+</script>
