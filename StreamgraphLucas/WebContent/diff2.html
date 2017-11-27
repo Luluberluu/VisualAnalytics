@@ -45,27 +45,6 @@ var occupJenkins = [];
 var occupMonett = [];
 
 (function () {
-	var margin = {top: 20, right: 20, bottom: 30, left: 50},
-	    width = 960 - margin.left - margin.right,
-	    height = 500 - margin.top - margin.bottom;
-	
-	var x = d3.scaleTime()
-	    .rangeRound([0, width]);
-	
-	var y = d3.scaleLinear()
-	    .rangeRound([height, 0]);
-	
-	var xAxis = d3.axisBottom(x);
-	
-	var yAxis = d3.axisLeft(y);
-	
-	var svg = d3.select("body").append("svg")
-	    .attr("width", width + margin.left + margin.right)
-	    .attr("height", height + margin.top + margin.bottom)
-	  .append("g")
-	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-	
-	
 	d3.csv("parkingDataOld.csv", function(error, data) {
 		if (error) throw error;
 		
@@ -100,196 +79,207 @@ var occupMonett = [];
 		for (var i = 0; i < occupMonett.length; i++) {
 		  occupMonett[i].Occupancy = occupMonett[i].Occupancy / maxMonett;
 		}
-		  
-		// Create the combined data set
-		var combinedData = [];
-		for (var i = 0; i < occupBoyd.length; i++) {
-		  var tempObj = {};
-		  tempObj.Date = occupBoyd[i].Date;
-		  tempObj.Occ1 = occupBoyd[i].Occupancy; // will graph Occ1 vs. Occ2
-		  tempObj.Occ2 = occupDuck[i].Occupancy;
-		  combinedData.push(tempObj);
-		}
-		x.domain(d3.extent(combinedData, function(d) { return d.Date; }));
-		y.domain([-0.01, d3.max(combinedData, function(d) { return Math.max(d.Occ1, d.Occ2); })]);
 		
-		svg.datum(combinedData);
+		(function() {
+			var margin = {top: 20, right: 20, bottom: 30, left: 50},
+			    width = 960 - margin.left - margin.right,
+			    height = 500 - margin.top - margin.bottom;
+			
+			var x = d3.scaleTime()
+			    .rangeRound([0, width]);
+			
+			var y = d3.scaleLinear()
+			    .rangeRound([height, 0]);
+			
+			var xAxis = d3.axisBottom(x);
+
+			var yAxis = d3.axisLeft(y).tickFormat(d3.format(".0%"));
+			
+			var svg = d3.select("body").append("svg")
+			    .attr("width", width + margin.left + margin.right)
+			    .attr("height", height + margin.top + margin.bottom)
+			  .append("g")
+			    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+			  
+			// Create the combined data set
+			var combinedData = [];
+			for (var i = 0; i < occupBoyd.length; i++) {
+			  var tempObj = {};
+			  tempObj.Date = occupBoyd[i].Date;
+			  tempObj.Occ1 = occupBoyd[i].Occupancy; // will graph Occ1 vs. Occ2
+			  tempObj.Occ2 = occupDuck[i].Occupancy;
+			  combinedData.push(tempObj);
+			}
+
+			x.domain(d3.extent(combinedData, function(d) { return d.Date; }));
+			y.domain([-0.05, d3.max(combinedData, function(d) { return Math.max(d.Occ1, d.Occ2); })]);
+			
+			svg.datum(combinedData);
+			
+			var line = d3.line()
+			   .curve(d3.curveMonotoneX)
+			    .x(function(d) { return x(d.Date); })
+			    .y(function(d) { return y(d["Occ1"]); });
+			
+			var area = d3.area()
+			   .curve(d3.curveMonotoneX)
+			    .x(function(d) { return x(d.Date); })
+			    .y1(function(d) { return y(d["Occ1"]); });
+			
+			svg.append("clipPath")
+			    .attr("id", "clip-below")
+			  .append("path")
+			    .attr("d", area.y0(height));
+			
+			svg.append("clipPath")
+			    .attr("id", "clip-above")
+			  .append("path")
+			    .attr("d", area.y0(0));
+			
+			svg.append("path")
+			    .attr("class", "area above")
+			    .attr("clip-path", "url(#clip-above)")
+			    .attr("d", area.y0(function(d) { return y(d["Occ2"]); }));
+			
+			svg.append("path")
+			    .attr("class", "area below")
+			    .attr("clip-path", "url(#clip-below)")
+			    .attr("d", area);
+			
+			svg.append("path")
+			    .attr("class", "line")
+			    .attr("d", line);
+			
+			svg.append("g")
+			    .attr("class", "x axis")
+			    .attr("transform", "translate(0," + height + ")")
+			    .call(xAxis);
+			
+			svg.append("g")
+			    .attr("class", "y axis")
+			    .call(yAxis);
+			
+			svg.append("text")
+			    .attr("class", "x label")
+			    .attr("text-anchor", "end")
+			    .attr("x", width)
+			    .attr("y", height - 6)
+			    .attr("font-size", "1.2em")
+			    .text("Day");
+
+			svg.append("text")
+			    .attr("class", "y label")
+			    .attr("text-anchor", "end")
+			    .attr("y", 6)
+			    .attr("dy", ".75em")
+			    .attr("font-size", "1.2em")
+			    .attr("transform", "rotate(-90)")
+			    .text("Occupancy (%)");
+		})();
 		
-		var line = d3.line()
-		   .curve(d3.curveMonotoneX)
-		    .x(function(d) { return x(d.Date); })
-		    .y(function(d) { return y(d["Occ1"]); });
+		(function () {
+			var margin = {top: 20, right: 20, bottom: 30, left: 50},
+		    width = 960 - margin.left - margin.right,
+		    height = 500 - margin.top - margin.bottom;
+			
+			var x = d3.scaleTime()
+			    .rangeRound([0, width]);
+			
+			var y = d3.scaleLinear()
+			    .rangeRound([height, 0]);
+			
+			var xAxis = d3.axisBottom(x);
+			
+			var yAxis = d3.axisLeft(y).tickFormat(d3.format(".0%"));
+			
+			var svg = d3.select("body").append("svg")
+			    .attr("width", width + margin.left + margin.right)
+			    .attr("height", height + margin.top + margin.bottom)
+			  .append("g")
+			    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+			// Create the combined data set
+			var combinedData = [];
+			for (var i = 0; i < occupBoyd.length; i++) {
+			  var tempObj = {};
+			  tempObj.Date = occupBoyd[i].Date;
+			  tempObj.Time = occupBoyd[i].Time;
+			  tempObj.Occ = occupBoyd[i].Occupancy - occupDuck[i].Occupancy;
+			  combinedData.push(tempObj);
+			}
+			x.domain(d3.extent(combinedData, function(d) { return d.Date; }));
+			y.domain([-1, 1]);
+			
+			svg.datum(combinedData);
+			
+			var line = d3.line()
+			    .curve(d3.curveMonotoneX)
+			    .x(function(d) { return x(d.Date); })
+			    .y(function(d) { return y(d["Occ"]); });
 		
-		var area = d3.area()
-		   .curve(d3.curveMonotoneX)
-		    .x(function(d) { return x(d.Date); })
-		    .y1(function(d) { return y(d["Occ1"]); });
-		
-		svg.append("clipPath")
-		    .attr("id", "clip-below")
-		  .append("path")
-		    .attr("d", area.y0(height));
-		
-		svg.append("clipPath")
-		    .attr("id", "clip-above")
-		  .append("path")
-		    .attr("d", area.y0(0));
-		
-		svg.append("path")
-		    .attr("class", "area above")
-		    .attr("clip-path", "url(#clip-above)")
-		    .attr("d", area.y0(function(d) { return y(d["Occ2"]); }));
-		
-		svg.append("path")
-		    .attr("class", "area below")
-		    .attr("clip-path", "url(#clip-below)")
-		    .attr("d", area);
-		
-		svg.append("path")
-		    .attr("class", "line")
-		    .attr("d", line);
-		
-		svg.append("g")
-		    .attr("class", "x axis")
-		    .attr("transform", "translate(0," + height + ")")
-		    .call(xAxis);
-		
-		svg.append("g")
-		    .attr("class", "y axis")
-		    .call(yAxis);
-	});
-})();
-(function () {
-	var margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
-	
-	var x = d3.scaleTime()
-	    .rangeRound([0, width]);
-	
-	var y = d3.scaleLinear()
-	    .rangeRound([height, 0]);
-	
-	var xAxis = d3.axisBottom(x);
-	
-	var yAxis = d3.axisLeft(y);
-	
-	var svg = d3.select("body").append("svg")
-	    .attr("width", width + margin.left + margin.right)
-	    .attr("height", height + margin.top + margin.bottom)
-	  .append("g")
-	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-	
-	
-	var occupBoyd = [];
-	var occupDuck = [];
-	var occupJenkins = [];
-	var occupMonett = [];
-	
-	d3.csv("parkingDataOld.csv", function(error, data) {
-		if (error) throw error;
-		
-		var startDate = new Date("2/15/2017");
-		var endDate = new Date("3/15/2017");
-		data.forEach(function(d) {
-		  d.Date = parseDateTime(d.Date + " " + d.Time);
-		  d.Occupancy = +d.Occupancy;
-			if (d.Date < startDate || d.Date > endDate)
-				return;
-	
-		    if (d.Facility == "Boyd House"){
-		    	occupBoyd.push(d);
-		    } else if (d.Facility == "Duck Pond"){
-		    	occupDuck.push(d);
-		    } else if (d.Facility == "Jenkins"){
-		    	occupJenkins.push(d);
-		    } else if (d.Facility == "Monett Lot - North"){
-		    	occupMonett.push(d);
-		    }
-		});
-	
-		// Convert all occupancy data into percentage of the max of that lot, assuming lots don't fill past the max
-		var maxBoyd = Math.max.apply(Math, occupBoyd.map(function(o){ return o.Occupancy; }));
-		for (var i = 0; i < occupBoyd.length; i++) {
-		  occupBoyd[i].Occupancy = occupBoyd[i].Occupancy / maxBoyd;
-		}
-		var maxDuck = Math.max.apply(Math, occupDuck.map(function(o){ return o.Occupancy; }));
-		for (var i = 0; i < occupDuck.length; i++) {
-		  occupDuck[i].Occupancy = occupDuck[i].Occupancy / maxDuck;
-		}
-		var maxJenkins = Math.max.apply(Math, occupJenkins.map(function(o){ return o.Occupancy; }));
-		for (var i = 0; i < occupJenkins.length; i++) {
-		  occupJenkins[i].Occupancy = occupJenkins[i].Occupancy / maxJenkins;
-		}
-		var maxMonett = Math.max.apply(Math, occupMonett.map(function(o){ return o.Occupancy; }));
-		for (var i = 0; i < occupMonett.length; i++) {
-		  occupMonett[i].Occupancy = occupMonett[i].Occupancy / maxMonett;
-		}
-		
-		// Create the combined data set
-		var combinedData = [];
-		for (var i = 0; i < occupBoyd.length; i++) {
-		  var tempObj = {};
-		  tempObj.Date = occupBoyd[i].Date;
-		  tempObj.Time = occupBoyd[i].Time;
-		  tempObj.Occ = occupBoyd[i].Occupancy - occupDuck[i].Occupancy;
-		  combinedData.push(tempObj);
-		}
-		x.domain(d3.extent(combinedData, function(d) { return d.Date; }));
-		y.domain([-1, 1]);
-		
-		svg.datum(combinedData);
-		
-		var line = d3.line()
-		    .curve(d3.curveMonotoneX)
-		    .x(function(d) { return x(d.Date); })
-		    .y(function(d) { return y(d["Occ"]); });
-	
-		var xline = d3.line()
-		    .x(function(d) { return x(d.Date); })
-		    .y(function(d) { return y(0); });
-		
-		var area = d3.area()
-	        .curve(d3.curveMonotoneX)
-		    .x(function(d) { return x(d.Date); })
-		    .y1(function(d) { return y(d["Occ"]); });
-		
-		svg.append("clipPath")
-		    .attr("id", "clip-below2")
-		  .append("path")
-		    .attr("d", area.y0(height));
-		
-		svg.append("clipPath")
-		    .attr("id", "clip-above2")
-		  .append("path")
-		    .attr("d", area.y0(0));
-		
-		svg.append("path")
-		    .attr("class", "area above")
-		    .attr("clip-path", "url(#clip-above2)")
-		    .attr("d", area.y0(function (d) { return y(0); }));
-		
-		svg.append("path")
-		    .attr("class", "area below")
-		    .attr("clip-path", "url(#clip-below2)")
-		    .attr("d", area);
-		
-		svg.append("path")
-		    .attr("class", "line")
-		    .attr("d", line);
-		
-		svg.append("path")
-		    .attr("class", "line")
-		    .attr("d", xline);
-		
-		svg.append("g")
-		    .attr("class", "x axis")
-		    .attr("transform", "translate(0," + height + ")")
-		    .call(xAxis);
-		
-		svg.append("g")
-		    .attr("class", "y axis")
-		    .call(yAxis);
+			var xline = d3.line()
+			    .x(function(d) { return x(d.Date); })
+			    .y(function(d) { return y(0); });
+			
+			var area = d3.area()
+		        .curve(d3.curveMonotoneX)
+			    .x(function(d) { return x(d.Date); })
+			    .y1(function(d) { return y(d["Occ"]); });
+			
+			svg.append("clipPath")
+			    .attr("id", "clip-below2")
+			  .append("path")
+			    .attr("d", area.y0(height));
+			
+			svg.append("clipPath")
+			    .attr("id", "clip-above2")
+			  .append("path")
+			    .attr("d", area.y0(0));
+			
+			svg.append("path")
+			    .attr("class", "area above")
+			    .attr("clip-path", "url(#clip-above2)")
+			    .attr("d", area.y0(function (d) { return y(0); }));
+			
+			svg.append("path")
+			    .attr("class", "area below")
+			    .attr("clip-path", "url(#clip-below2)")
+			    .attr("d", area);
+			
+			svg.append("path")
+			    .attr("class", "line")
+			    .attr("d", line);
+			
+			svg.append("path")
+			    .attr("class", "line")
+			    .attr("d", xline);
+			
+			svg.append("g")
+			    .attr("class", "x axis")
+			    .attr("transform", "translate(0," + height + ")")
+			    .call(xAxis);
+			
+			svg.append("g")
+			    .attr("class", "y axis")
+			    .call(yAxis);
+			
+			svg.append("text")
+			    .attr("class", "x label")
+			    .attr("text-anchor", "end")
+			    .attr("x", width)
+			    .attr("y", height - 6)
+			    .attr("font-size", "1.2em")
+			    .text("Day");
+
+			svg.append("text")
+			    .attr("class", "y label")
+			    .attr("text-anchor", "end")
+			    .attr("y", 6)
+			    .attr("dy", ".75em")
+			    .attr("font-size", "1.2em")
+			    .attr("transform", "rotate(-90)")
+			    .text("Difference in Occupancy");
+		})();
 	});
 })();
 </script>
