@@ -1,21 +1,70 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <title>Streamgraph</title>
-<style>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="#">Visual Analytics</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav">
+      <li class="nav-item active">
+        <a class="nav-link" href="vis.html">Stream Graph <span class="sr-only">(current)</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="vis2.html">Heatmap</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Difference graph</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+<div class="container" style="margin-top: 10px; width: 100%">
+	<table>
+		<tr>
+			<td>
+				<div class="container" style="width: 200px;">
+					<ul class="list-group">
+						<li class="list-group-item" style="padding: 2px"><span
+							class="badge" style="color: #e78ac3">Monett Lot - North</span></li>
+						<li class="list-group-item" style="padding: 2px"><span
+							class="badge" style="color: #8da0cb">Jenkins</span></li>
+						<li class="list-group-item" style="padding: 2px"><span
+							class="badge" style="color: #fc8d62">Duck Pond</span></li>
+						<li class="list-group-item" style="padding: 2px"><span
+							class="badge" style="color: #66C2A5">Boyd House</span></li>
+					</ul>
+				</div>
+			</td>
+			<td>
 
-button {
-  position: absolute;
-  left: 10px;
-  top: 10px;
-}
+				<div class="page-header"
+					style="width: 500px; vertical-align: middle;">
+					<center>
+						<h2>Visualizing OU parking data with Mesonet temperature data</h2>
+					</center>
+				</div>
+			</td>
+		</tr>
+		
+	</table>
 
-</style>
-<button onclick="transition()">Update</button>
-<p>
-<svg width="960" height="500"></svg>
-<script src="https://d3js.org/d3.v4.min.js"></script>
-
+	<!--  <button onclick="transition()">Update</button>-->
+		<div style ="padding: 10px">
+			<svg width="1040" height="480"></svg>
+		</div>
+		<script src="https://d3js.org/d3.v4.min.js"></script>
+		<script
+			src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular.min.js"></script>
+		<link rel="stylesheet"
+			href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css"
+			integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb"
+			crossorigin="anonymous">
+</div>
 <script>
+
+// 20 weeks in one semester
 
 var n = 4, // number of layers
     m = 1156; // number of samples per layer
@@ -26,12 +75,32 @@ var occupDuck = [];
 var occupJenkins = [];
 var occupMonett = [];
 
-d3.csv("/Streamgraph/parkingDataOld.csv", function(data) {
+var temp = [];
+
+var semData = [];
+
+var date = [];
+var dictDate = {};
+dictDate["3111"] = 0;
+
+d3.csv("/Streamgraph/parkingDataNew.csv", function(data) {
+	
+	var parseTime = d3.timeParse("%m %d %Y");
+	var i = 1;
 	data.forEach(function(d) {
 		//console.log(d.Occupancy)
 	    d.Occupancy = +d.Occupancy;
+		
 	    if(d.Facility == "Boyd House"){
 	    	occupBoyd.push(d.Occupancy);
+	    	d.Temperature = +d.Temperature;
+	    	temp.push(d.Temperature)
+	    	//var hour = d.Time.split(':');
+	    	var day = parseTime(d.Date)
+	    	date.push(day);
+	    	var key = day.getDate().toString().concat(day.getMonth())
+	    	dictDate[key] = i;
+	    	
 	    }else if(d.Facility == "Duck Pond"){
 	    	occupDuck.push(d.Occupancy);
 	    }else if(d.Facility == "Jenkins"){
@@ -39,8 +108,8 @@ d3.csv("/Streamgraph/parkingDataOld.csv", function(data) {
 	    }else if(d.Facility == "Monett Lot - North"){
 	    	occupMonett.push(d.Occupancy);
 	    }
+	    i = i + 1;
 	  });
-	
 	
 });
     
@@ -50,28 +119,42 @@ setTimeout(function(){
 	data.push(occupBoyd);
 	data.push(occupDuck);
 	data.push(occupJenkins);
-	data.push(occupMonett)
+	data.push(occupMonett);
+	
+	semData = data;
 	
 	
 	var stack = d3.stack().keys(d3.range(n)).offset(d3.stackOffsetSilhouette),
     layers = stack(d3.transpose(d3.range(n).map(function(n) { return data[n] })));
-	console.log(d3.transpose(d3.range(n).map(function(n) { return data[n] })));
+	
+	// Include temperature into layers
+	var dataSVG = [];
+	dataSVG.push(layers);
+	dataSVG.push(temp);
 
 	stack.value(function(d, key) { return d[key]; });
 	
 	var svg = d3.select("svg"),
-	    width = +svg.attr("width"),
-	    height = +svg.attr("height");
+	    width = 1040,
+	    height = 480;
 	
 	var x = d3.scaleLinear()
-	    .domain([0, m - 1])
-	    .range([0, width]);
+	    .domain([0, m])
+	    .range([70, width]);
 	
 	var y = d3.scaleLinear()
 	    .domain([d3.min(layers, stackMin), d3.max(layers, stackMax)])
-	    .range([height, 0]);
+	    .range([440, 120]);
+	
+	var yTemp = d3.scaleLinear()
+		.domain([d3.min(temp), d3.max(temp)])
+	    .range([120, 20]);
 	
 	var z = d3.interpolateCool;
+	
+	var line = d3.line()
+	    .x(function(d, i) {return 70+i;})
+	    .y(function(d, i) {return yTemp(d);});
 	
 	var area = d3.area()
 	    .x(function(d, i) { return x(i); })
@@ -79,18 +162,260 @@ setTimeout(function(){
 	    .y1(function(d) { return y(d[1]); });
 	
 	var colorrange = ['#66c2a5','#fc8d62','#8da0cb','#e78ac3'];
-	var names = ["Boyd House", "Duck Pond", "Jenkins", "Monett Lot - North"];
+	var names = ["Boyd House", "Duck Pound", "Jenkins", "Monett Lot - North"];
 	
-	svg.selectAll("path")
+
+	svg.append("g")
+	  .selectAll("path")
 	  .data(layers)
 	  .enter().append("path")
 	    .attr("d", area)
+	    .on('click',backSemester)
 	    .attr("fill", function(d,i) { return colorrange[i]; }) // color
-        .append("title")
-        .text(function(d,i) { return names[i]; });
+        .append("title").text(function(d,i) { return names[i]; });
 	
+	svg.append("path")
+		.attr("id", "temp")
+		.attr("d", line(temp))
+		.attr("stroke", "url(#temperature-gradient)")
+		.attr("stroke-width", 2)
+		.attr("fill", "none");
+	
+	svg.append("linearGradient")
+	    .attr("id", "temperature-gradient")
+	    .attr("gradientUnits", "userSpaceOnUse")
+	    .attr("x1", 0).attr("y1", yTemp(0))
+	    .attr("x2", 0).attr("y2", yTemp(90))
+	    .selectAll("stop")
+	    .data([
+	      {offset: "0%", color: "steelblue"},
+	      {offset: "50%", color: "gray"},
+	      {offset: "100%", color: "red"}
+	    ])
+	    .enter().append("stop")
+	    .attr("offset", function(d) { return d.offset; })
+	    .attr("stop-color", function(d) { return d.color; });
+	
+	
+	// X axis
+	
+	var xAxis = d3.scaleTime()
+	    .domain(d3.extent(date))
+	    .range([70, width]);
+	
+		
+	svg.append("g")
+	.attr("id", "xaxis")
+    .attr("transform", "translate(0," + 440 + ")")
+    .call(d3.axisBottom(xAxis));
+	
+	// text label for the x axis
+	  
+	svg.append("text")             
+	      .attr("transform",
+	            "translate(" + (width/2) + " ," + 
+	                           (480) + ")")
+	      .style("text-anchor", "middle")
+	      .text("Date");
+	
+	d3.select('#xaxis')
+	   .selectAll('.tick')
+	   .on('click',transition);
+	
+	// Y axis
+	
+	
+	svg.append("g")
+	.attr("id", "yaxis")
+    .attr("transform", "translate(70," + 0 + ")")
+    .call(d3.axisLeft(yTemp));
+	
+	// text label for the Y axis
+	  
+	svg.append("text")             
+	      .attr("transform",
+	            "translate(" + (30) + " ," + 
+	                           (70) + ")rotate(-90)")
+	      .style("text-anchor", "middle")
+	      .text("Temperature");
+	
+	
+	
+	///////////////////////////////////////////////////////////////////////////
+	
+	
+	function backSemester() {
+		x = d3.scaleLinear()
+    	.domain([0, m])
+    	.range([70, width]);
+	
+		
+		// Update layer
+		var stack = d3.stack().keys(d3.range(n)).offset(d3.stackOffsetSilhouette),
+		layers = stack(d3.transpose(d3.range(n).map(function(n) { return semData[n] })));
+		var layers1 = [];
+		
+		d3.selectAll("path")
+			.data((t = layers, layers = layers1, layers1 = t))
+		    .transition()
+		    .duration(2500)
+		    .attr("d", area);
+		
+		d3.select('#temp').remove();
+		
+		svg.append("path")
+			.attr("id", "temp")
+			.transition()
+		    .duration(2500)
+			.attr("d", line(temp))
+			.attr("stroke", "url(#temperature-gradient)")
+			.attr("stroke-width", 2)
+			.attr("fill", "none");
+			
+		// Update axis
+	
+		d3.select('#xaxis')
+    		.call(d3.axisBottom(xAxis));
+	
+		d3.select('#yaxis')
+	    	.call(d3.axisLeft(yTemp));
+
+		
+		d3.select('#xaxis')
+		   .selectAll('.tick')
+		   .on('click',transition);
+	}
+	 
+	///////////////////////////////////////////////////////////////////////////
+
+	function transition(d) {
+		var t;
+		var data = [];
+		
+		// Transition semester to week
+		
+		// Deal with the number of recordings of occupancy by day		
+		var days = [];
+		days.push(d);
+
+		var tomorrow;
+		
+		var nbHours = [];
+		
+		for(i = 1; i < 7; i++){
+			tomorrow = new Date(days[i - 1]);
+			tomorrow.setDate(days[i - 1].getDate() + 1);
+			days.push(tomorrow);	
+		}
+		
+		var yesterday = new Date(d);
+		yesterday.setDate(d.getDate() - 1);
+		var key = yesterday.getDate().toString().concat(yesterday.getMonth())
+		var indexYest = dictDate[key];
+		
+		for(i = 0; i < 7; i++){
+			key = days[i].getDate().toString().concat(days[i].getMonth());
+			nbHours.push(dictDate[key] - indexYest);
+			indexYest = dictDate[key]; 
+		}
+			
+		var newDate = [];
+		var k = 0;
+		//var hour = 
+		
+		for(i = 0; i < 7; i++){
+			for(j = 0; j < nbHours[i]; j++){
+				var dia = new Date(days[i]);
+				dia.setHours(8 + j);
+				newDate.push(dia);
+				k = k + 1;
+			}
+		}
+		
+		// Update data
+		key = d.getDate().toString().concat(d.getMonth())
+		var indexDay = dictDate[key];
+		var dateNextWeek = new Date(d.getTime() + 7 * 24 * 60 * 60 * 1000);
+		key = dateNextWeek.getDate().toString().concat(dateNextWeek.getMonth())
+		var nextWeek = dictDate[key];
+		
+		if(nextWeek != null){		
+			nbHours.push(dictDate[key] - indexYest);
+			
+			var boyd = occupBoyd.slice(indexDay - nbHours[0], nextWeek - nbHours[7] );
+			var duck = occupDuck.slice(indexDay - nbHours[0], nextWeek - nbHours[7]);
+			var jenkins = occupJenkins.slice(indexDay - nbHours[0], nextWeek - nbHours[7]);
+			var monett = occupMonett.slice(indexDay - nbHours[0], nextWeek - nbHours[7]);
+			
+			data.push(boyd);
+			data.push(duck);
+			data.push(jenkins);
+			data.push(monett)
+				
+			console.log(data)
+			console.log(newDate)
+			
+			x = d3.scaleLinear()
+		    	.domain([0, k])
+		    	.range([70, width]);
+			
+			var newTemp = temp.slice(indexDay - nbHours[0], nextWeek - nbHours[7]);
+			
+			var newYTemp = d3.scaleLinear()
+			.domain([d3.min(newTemp), d3.max(newTemp)])
+		    .range([120, 20]);
+			
+			var newLine = d3.line()
+			    .x(function(d, i) {return x(i);})
+			    .y(function(d, i) {return newYTemp(d);});
+			
+				
+			// Update layer
+			var stack = d3.stack().keys(d3.range(n)).offset(d3.stackOffsetSilhouette),
+			layers1 = stack(d3.transpose(d3.range(n).map(function(n) { return data[n] })));
+			
+			
+			
+			d3.selectAll("path")
+				.data((t = layers1, layers1 = layers, layers = t))
+			    .transition()
+			    .duration(2500)
+			    .attr("d", area);
+			
+			d3.select('#temp').remove();
+			
+			
+			
+			svg.append("path")
+				.attr("id", "temp");
+			
+			d3.select('#temp')
+				.transition()
+				.duration(2500)
+					.attr("d", newLine(newTemp))
+					.attr("stroke", "url(#temperature-gradient)")
+					.attr("stroke-width", 5)
+					.attr("fill", "none");	
+			
+			// Update axis
+			var newXAxis = d3.scaleTime()
+			    .domain(d3.extent(newDate))
+			    .range([70, width]);
+
+			
+			d3.select('#xaxis')
+		    	.call(d3.axisBottom(newXAxis));
+			
+			d3.select('#yaxis')
+		    	.call(d3.axisLeft(newYTemp));
+				
+			d3.select('#xaxis')
+			   .selectAll('.tick')
+			   .on('click',transition);
+		}
+	}
 		    
-},5000);
+},200);
 
 
 
@@ -103,35 +428,6 @@ function stackMax(layer) {
 
 function stackMin(layer) {
   return d3.min(layer, function(d) { return d[0]; });
-}
-
-function transition() {
-  var t;
-  d3.selectAll("path")
-    .data((t = layers1, layers1 = layers0, layers0 = t))
-    .transition()
-      .duration(2500)
-      .attr("d", area);
-}
-
-// Inspired by Lee Byron�s test data generator.
-//  n : number of samples 
-//  m : number of bumps
-function bumps(n, m) {
-  var a = [], i;
-  for (i = 0; i < n; ++i) a[i] = 0;
-  for (i = 0; i < m; ++i) bump(a, n);
-  return a;
-}
-
-function bump(a, n) {
-  var x = 1 / (0.1 + Math.random()),
-      y = 2 * Math.random() - 0.5,
-      z = 10 / (0.1 + Math.random());
-  for (var i = 0; i < n; i++) {
-    var w = (i / n - y) * z;
-    a[i] += x * Math.exp(-w * w);
-  }
 }
 
 </script>
