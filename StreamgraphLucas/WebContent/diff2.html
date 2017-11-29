@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<head>
 <title>Difference Graph</title>
 <style>
 
@@ -33,18 +34,106 @@ body {
 }
 
 </style>
-<body>
-<h1>Occupancy of Boyd House vs. Duck Pond</h1>
-<script src="//d3js.org/d3.v4.min.js"></script>
-<script>
-var parseDateTime = d3.timeParse("%m %d %Y %I:%M:%S %p");
 
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+	  <a class="navbar-brand" href="#">Visual Analytics</a>
+	  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+	    <span class="navbar-toggler-icon"></span>
+	  </button>
+	  <div class="collapse navbar-collapse" id="navbarNav">
+	    <ul class="navbar-nav">
+	      <li class="nav-item">
+	        <a class="nav-link" href="vis.html">Stream Graph <span class="sr-only">(current)</span></a>
+	      </li>
+	      <li class="nav-item">
+	        <a class="nav-link" href="vis2.html">Heatmap</a>
+	      </li>
+	      <li class="nav-item active">
+	        <a class="nav-link" href="diff2.html">Difference graph</a>
+	      </li>
+	    </ul>
+	  </div>
+	</nav>
+  	<nav class="navbar navbar-inverse bg-inverse">
+	  <!-- Navbar content -->
+	</nav>
+<div class="container">
+	<div class="page-header" style="width: 800px; vertical-align: middle; text-align: center;">
+		<h2 id="title">Occupancy of Monett Lot - North vs. Jenkins</h2>
+	</div>
+</div>
+<svg id="svg1" width="960" height="500"></svg>
+<svg id="svg2" width="960" height="500"></svg>
+<div class="container" style="margin-top: 10px; width: 100%">
+	<table>
+		<tr>
+			<td style="padding: 5px;">
+				Choose two lots to compare. The difference is computed as the occupancy of the first lot minus the occupancy of the second lot.
+			</td>
+		</tr>
+		<tr>
+			<td>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<div class="btn-group" data-toggle="buttons" id="lot1">
+				  <label class="btn btn-primary active">
+				    <input type="radio" name="lot1" id="lot1m" autocomplete="off" checked>Monett Lot - North
+				  </label>
+				  <label class="btn btn-primary">
+				    <input type="radio" name="lot1" id="lot1j" autocomplete="off">Jenkins
+				  </label>
+				  <label class="btn btn-primary">
+				    <input type="radio" name="lot1" id="lot1d" autocomplete="off">Duck Pond
+				  </label>
+				  <label class="btn btn-primary">
+				    <input type="radio" name="lot1" id="lot1b" autocomplete="off">Boyd House
+				  </label>
+				</div>
+				<div class="btn-group" data-toggle="buttons" id="lot2">
+				  <label class="btn btn-primary">
+				    <input type="radio" name="lot2" id="lot2m" autocomplete="off">Monett Lot - North
+				  </label>
+				  <label class="btn btn-primary active">
+				    <input type="radio" name="lot2" id="lot2j" autocomplete="off" checked>Jenkins
+				  </label>
+				  <label class="btn btn-primary">
+				    <input type="radio" name="lot2" id="lot2d" autocomplete="off">Duck Pond
+				  </label>
+				  <label class="btn btn-primary">
+				    <input type="radio" name="lot2" id="lot2b" autocomplete="off">Boyd House
+				  </label>
+				</div>
+			</td>
+			<td>
+
+			</td>
+		</tr>
+		
+	</table>
+</div>
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+ integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js"
+ integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"
+ integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+<script>
 var occupBoyd = [];
 var occupDuck = [];
 var occupJenkins = [];
 var occupMonett = [];
+var lots = [occupMonett, occupJenkins, occupDuck, occupBoyd];
+var lotNames = ["Monett Lot - North", "Jenkins", "Duck Pond", "Boyd House"];
 
 (function () {
+	var parseDateTime = d3.timeParse("%m %d %Y %I:%M:%S %p");
+	
 	d3.csv("parkingDataOld.csv", function(error, data) {
 		if (error) throw error;
 		
@@ -95,24 +184,22 @@ var occupMonett = [];
 
 			var yAxis = d3.axisLeft(y).tickFormat(d3.format(".0%"));
 			
-			var svg = d3.select("body").append("svg")
-			    .attr("width", width + margin.left + margin.right)
-			    .attr("height", height + margin.top + margin.bottom)
+			var svg = d3.select("#svg1")
 			  .append("g")
 			    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 			  
 			// Create the combined data set
 			var combinedData = [];
-			for (var i = 0; i < occupBoyd.length; i++) {
+			for (var i = 0; i < occupMonett.length; i++) {
 			  var tempObj = {};
-			  tempObj.Date = occupBoyd[i].Date;
-			  tempObj.Occ1 = occupBoyd[i].Occupancy; // will graph Occ1 vs. Occ2
-			  tempObj.Occ2 = occupDuck[i].Occupancy;
+			  tempObj.Date = occupMonett[i].Date;
+			  tempObj.Occ1 = occupMonett[i].Occupancy; // will graph Occ1 vs. Occ2
+			  tempObj.Occ2 = occupJenkins[i].Occupancy;
 			  combinedData.push(tempObj);
 			}
 
 			x.domain(d3.extent(combinedData, function(d) { return d.Date; }));
-			y.domain([-0.05, d3.max(combinedData, function(d) { return Math.max(d.Occ1, d.Occ2); })]);
+			y.domain([-0.05, 1.0]);
 			
 			svg.datum(combinedData);
 			
@@ -137,16 +224,19 @@ var occupMonett = [];
 			    .attr("d", area.y0(0));
 			
 			svg.append("path")
+				.attr("id", "area-above")
 			    .attr("class", "area above")
 			    .attr("clip-path", "url(#clip-above)")
 			    .attr("d", area.y0(function(d) { return y(d["Occ2"]); }));
 			
 			svg.append("path")
+				.attr("id", "area-below")
 			    .attr("class", "area below")
 			    .attr("clip-path", "url(#clip-below)")
 			    .attr("d", area);
 			
 			svg.append("path")
+				.attr("id", "line1")
 			    .attr("class", "line")
 			    .attr("d", line);
 			
@@ -164,7 +254,7 @@ var occupMonett = [];
 			    .attr("text-anchor", "end")
 			    .attr("x", width)
 			    .attr("y", height - 6)
-			    .attr("font-size", "1.2em")
+			    .attr("font-size", "1.1em")
 			    .text("Day");
 
 			svg.append("text")
@@ -172,7 +262,7 @@ var occupMonett = [];
 			    .attr("text-anchor", "end")
 			    .attr("y", 6)
 			    .attr("dy", ".75em")
-			    .attr("font-size", "1.2em")
+			    .attr("font-size", "1.1em")
 			    .attr("transform", "rotate(-90)")
 			    .text("Occupancy (%)");
 		})();
@@ -192,19 +282,17 @@ var occupMonett = [];
 			
 			var yAxis = d3.axisLeft(y).tickFormat(d3.format(".0%"));
 			
-			var svg = d3.select("body").append("svg")
-			    .attr("width", width + margin.left + margin.right)
-			    .attr("height", height + margin.top + margin.bottom)
+			var svg = d3.select("#svg2")
 			  .append("g")
 			    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 			// Create the combined data set
 			var combinedData = [];
-			for (var i = 0; i < occupBoyd.length; i++) {
+			for (var i = 0; i < occupMonett.length; i++) {
 			  var tempObj = {};
-			  tempObj.Date = occupBoyd[i].Date;
-			  tempObj.Time = occupBoyd[i].Time;
-			  tempObj.Occ = occupBoyd[i].Occupancy - occupDuck[i].Occupancy;
+			  tempObj.Date = occupMonett[i].Date;
+			  tempObj.Time = occupMonett[i].Time;
+			  tempObj.Occ = occupMonett[i].Occupancy - occupJenkins[i].Occupancy;
 			  combinedData.push(tempObj);
 			}
 			x.domain(d3.extent(combinedData, function(d) { return d.Date; }));
@@ -237,16 +325,19 @@ var occupMonett = [];
 			    .attr("d", area.y0(0));
 			
 			svg.append("path")
+				.attr("id", "area-above2")
 			    .attr("class", "area above")
 			    .attr("clip-path", "url(#clip-above2)")
 			    .attr("d", area.y0(function (d) { return y(0); }));
 			
 			svg.append("path")
+				.attr("id", "area-below2")
 			    .attr("class", "area below")
 			    .attr("clip-path", "url(#clip-below2)")
 			    .attr("d", area);
 			
 			svg.append("path")
+				.attr("id", "line2")
 			    .attr("class", "line")
 			    .attr("d", line);
 			
@@ -268,7 +359,7 @@ var occupMonett = [];
 			    .attr("text-anchor", "end")
 			    .attr("x", width)
 			    .attr("y", height - 6)
-			    .attr("font-size", "1.2em")
+			    .attr("font-size", "1.1em")
 			    .text("Day");
 
 			svg.append("text")
@@ -276,10 +367,152 @@ var occupMonett = [];
 			    .attr("text-anchor", "end")
 			    .attr("y", 6)
 			    .attr("dy", ".75em")
-			    .attr("font-size", "1.2em")
+			    .attr("font-size", "1.1em")
 			    .attr("transform", "rotate(-90)")
 			    .text("Difference in Occupancy");
 		})();
 	});
 })();
+
+function update(lot1, lot2) {
+	var lot1data, lot2data;
+	for (var i = 0; i < lots.length; i++) {
+		if (lotNames[i] == lot1) {
+			lot1data = lots[i];
+		}
+		if (lotNames[i] == lot2) {
+			lot2data = lots[i];
+		}
+	}
+	
+	// Create the combined data set
+	var combinedData = [];
+	for (var i = 0; i < lot1data.length; i++) {
+	  var tempObj = {};
+	  tempObj.Date = lot1data[i].Date;
+	  tempObj.Occ1 = lot1data[i].Occupancy; // will graph Occ1 vs. Occ2
+	  tempObj.Occ2 = lot2data[i].Occupancy;
+	  tempObj.Occ = lot1data[i].Occupancy - lot2data[i].Occupancy; // store diff in same object here
+	  combinedData.push(tempObj);
+	}
+	console.log(lot1 + " -> " + lot2);
+	console.log(combinedData);
+	
+	$("#title").text("Occupancy of " + lot1 + " vs. " + lot2);
+	
+	(function (){
+		var svg = d3.select("#svg1");
+		var margin = {top: 20, right: 20, bottom: 30, left: 50},
+		    width = 960 - margin.left - margin.right,
+		    height = 500 - margin.top - margin.bottom;
+		
+		var x = d3.scaleTime()
+	    	.rangeRound([0, width]);
+	
+		var y = d3.scaleLinear()
+		    .rangeRound([height, 0]);
+		
+		x.domain(d3.extent(combinedData, function(d) { return d.Date; }));
+		y.domain([-0.05, 1.0]);
+		
+		svg.datum(combinedData);
+		
+		var line = d3.line()
+		   .curve(d3.curveMonotoneX)
+		    .x(function(d) { return x(d.Date); })
+		    .y(function(d) { return y(d["Occ1"]); });
+		
+		var area = d3.area()
+		   .curve(d3.curveMonotoneX)
+		    .x(function(d) { return x(d.Date); })
+		    .y1(function(d) { return y(d["Occ1"]); });
+		
+		svg.select("#clip-below path")
+		    .attr("d", area.y0(height));
+		
+		svg.select("#clip-above path")
+		    .attr("d", area.y0(0));
+		
+		svg.select("#area-above")
+			.transition()
+			.duration(1000)
+		    .attr("d", area.y0(function(d) { return y(d["Occ2"]); }));
+		
+		svg.select("#area-below")
+			.transition()
+			.duration(1000)
+		    .attr("d", area);
+		
+		svg.select("#line1")
+			.transition()
+			.duration(1000)
+		    .attr("d", line);
+	})();
+
+	(function (){
+		var svg = d3.select("#svg2");
+		var margin = {top: 20, right: 20, bottom: 30, left: 50},
+		    width = 960 - margin.left - margin.right,
+		    height = 500 - margin.top - margin.bottom;
+		
+		var x = d3.scaleTime()
+		    .rangeRound([0, width]);
+		
+		var y = d3.scaleLinear()
+		    .rangeRound([height, 0]);
+
+		x.domain(d3.extent(combinedData, function(d) { return d.Date; }));
+		y.domain([-1, 1]);
+		
+		svg.datum(combinedData);
+		
+		var line = d3.line()
+		   .curve(d3.curveMonotoneX)
+		    .x(function(d) { return x(d.Date); })
+		    .y(function(d) { return y(d["Occ"]); });
+		
+		var area = d3.area()
+		   .curve(d3.curveMonotoneX)
+		    .x(function(d) { return x(d.Date); })
+		    .y1(function(d) { return y(d["Occ"]); });
+		
+		svg.select("#clip-below2 path")
+		    .attr("d", area.y0(height));
+		
+		svg.select("#clip-above2 path")
+		    .attr("d", area.y0(0));
+		
+		svg.select("#area-above2")
+			.transition()
+			.duration(1000)
+		    .attr("d", area.y0(function(d) { return y(0); }));
+		
+		svg.select("#area-below2")
+			.transition()
+			.duration(1000)
+		    .attr("d", area);
+		
+		svg.select("#line2")
+			.transition()
+			.duration(1000)
+		    .attr("d", line);
+	})();
+}
+
+// 
+$(function() {
+	$(".btn-group .btn").change(function() {
+		var selected = $(this).text().trim();
+		var lot1, lot2;
+		if ($(this).parent()[0].id == "lot1") {
+			lot1 = selected;
+			lot2 = $("#lot2 .active").text().trim();
+		} else {
+			lot1 = $("#lot1 .active").text().trim();
+			lot2 = selected;
+		}
+		
+		update(lot1, lot2);
+	});
+});
 </script>

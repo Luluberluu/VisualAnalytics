@@ -1,6 +1,6 @@
 Facility,Occupancy Type,Month,Date,Time,Day,Occupancy,Temperature max,Temperature min,Maximum Heat Index,Minimum Wind Chill Index,Rain,Raining type,Temperature
-Boyd House,Transient,January,01 01 2017,9:06 AM,Sun,8,61.57,31.6,-996,26.96,0,No rain,< 47
-Boyd House,Transient,January,01 01 2017,10:14 AM,Sun,7,61.57,31.6,-996,26.96,0,No rain,< 47
+Boyd House,Transient,January,01 01 2017,9:06:00 AM,Sun,8,61.57,31.6,-996,26.96,0,No rain,< 47
+Boyd House,Transient,January,01 01 2017,10:14:00 AM,Sun,7,61.57,31.6,-996,26.96,0,No rain,< 47
 Boyd House,Transient,January,01 01 2017,11:19:39 AM,Sun,7,61.57,31.6,-996,26.96,0,No rain,< 47
 Boyd House,Transient,January,01 01 2017,12:26:05 PM,Sun,6,61.57,31.6,-996,26.96,0,No rain,< 47
 Boyd House,Transient,January,01 01 2017,1:30:52 PM,Sun,5,61.57,31.6,-996,26.96,0,No rain,< 47
